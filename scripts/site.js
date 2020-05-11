@@ -53,7 +53,7 @@ function initializeLoans() {
 
 function create_UUID(){
     var dt = new Date().getTime();
-    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
         var r = (dt + Math.random()*16)%16 | 0;
         dt = Math.floor(dt/16);
         return (c=='x' ? r :(r&0x3|0x8)).toString(16);
@@ -73,9 +73,9 @@ function bindLoansToDropDown() {
 
 
     for (var i = 0; i < LoanApplicationList.length; i++) {
-        var la = LoanApplicationList[i];
+        let la = LoanApplicationList[i];
 
-        var el = document.createElement("option");
+        let el = document.createElement("option");
         el.textContent = "Application of " + la.ApplicantName;
         el.value = la.Id.toString();
         dropDown.appendChild(el);
@@ -90,11 +90,18 @@ function loadApplication() {
 
     if (la != undefined) {
 
-        var isEmployed = la.Factors[0];
-        var hasKids = la.Factors[1];
-        var hasLoans = la.Factors[2];
-        var hasCreditcards = la.Factors[3];
+        let[
+            isEmployed, 
+            hasKids = true, 
+            hasLoans, 
+            hasCreditcards,
+            ...moreArgs
+        ] = la.Factors;
 
+        let{
+            Id:a, 
+            ApplicantName:b
+        } = la;
 
         document.getElementById("inputName").value = la.ApplicantName;
         document.getElementById("inputDoBMonth").value = la.ApplicantDateOfBirth.getMonth() + 1;
@@ -111,7 +118,7 @@ function loadApplication() {
 
         var riskLabel = document.getElementById("riskSummary");
         riskLabel.style.display = "block";
-        riskLabel.innerText = generateRickProfile(la); 
+        riskLabel.innerHTML = generateRickProfile(la); 
 
     }
 }
@@ -339,9 +346,9 @@ function generateRickProfile(la) {
     var reviewText = "";
 
     if (age < 18) {
-        reviewText = "your application will not be reviewed, because you have to be 18 years or older.";
+        reviewText = "will not be reviewed, because you have to be 18 years or older.";
     } else {
-        reviewText = "your application will be reviewed.";
+        reviewText = "will be reviewed.";
     }
 
     var riskProfile = "";
@@ -356,9 +363,35 @@ function generateRickProfile(la) {
         riskProfile = "high";
     }
 
-    var summaryText = "Dear " + la.ApplicantName + ", " + reviewText + " Your risk profile is " + riskProfile;
+    let applicationCode = String.raw `\t${createApplicationId()}`;
+
+    var summaryText = highlightText `Dear ${la.ApplicantName}, <br>
+    your application for ${"$" + la.LoanAmount}, ${reviewText}. <br>
+    Your risk profile is ${riskProfile}<br>
+    Your unique application code is ${createApplicationId()}`;
 
     return summaryText;
+}
+
+function highlightText(strings, ...values) {
+    let str = "";
+    for(let i = 0; i < strings.raw.length; i++){
+        if(i > 0){
+            str += `<b>${values[i-1]}</b>`
+        }
+        str += strings.raw[i];
+    }
+    return str;
+}
+
+function createApplicationId() {
+    let result = '';
+    let characters = 'ABCDEUVYZabcxcbnmnm0134535\/\#@$@()*^!';
+    let charactersLength = characters.length;
+    for( let i = 0; i < 8; i++) {
+        result += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return result;
 }
 
 
